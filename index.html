@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PokeAPI Viewer</title>
+    <title>ポケモン技一覧</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -82,69 +82,37 @@
             margin: 5px 0;
         }
 
-        .pokemon-types {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .type-badge {
-            padding: 5px 15px;
-            border-radius: 20px;
-            color: white;
-            font-size: 14px;
-            font-weight: bold;
-            text-transform: capitalize;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+        .moves-table {
+            width: 100%;
+            border-collapse: collapse;
             margin-top: 20px;
         }
 
-        .info-section {
+        .moves-table th, .moves-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .moves-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        .moves-table tr:hover {
             background-color: #f9f9f9;
-            border-radius: 8px;
-            padding: 15px;
         }
 
-        .info-section h3 {
-            margin-top: 0;
-            color: #e53935;
-            border-bottom: 2px solid #e53935;
-            padding-bottom: 5px;
-        }
-
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
-
-        .stat-bar {
-            height: 10px;
-            background-color: #eee;
-            border-radius: 5px;
-            margin-top: 5px;
-            position: relative;
-        }
-
-        .stat-fill {
-            height: 100%;
-            border-radius: 5px;
-            background-color: #4caf50;
-        }
-
-        .abilities-list {
-            padding: 0;
-            list-style-type: none;
-        }
-
-        .abilities-list li {
-            padding: 5px 0;
+        .type-badge {
+            padding: 3px 10px;
+            border-radius: 20px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
             text-transform: capitalize;
+            display: inline-block;
+            text-align: center;
+            min-width: 70px;
         }
 
         .loading {
@@ -185,7 +153,7 @@
     </style>
 </head>
 <body>
-    <h1>PokeAPI Viewer</h1>
+    <h1>ポケモン技一覧</h1>
     <div class="search-container">
         <input type="text" id="pokemonSearch" placeholder="ポケモンの名前または番号を入力">
         <button id="searchButton">検索</button>
@@ -200,40 +168,25 @@
             <div>
                 <h2 id="pokemonName" class="pokemon-name"></h2>
                 <p id="pokemonNumber" class="pokemon-number"></p>
-                <div id="pokemonTypes" class="pokemon-types"></div>
             </div>
         </div>
         
-        <div class="info-grid">
-            <div class="info-section">
-                <h3>基本情報</h3>
-                <div class="info-item">
-                    <span>高さ:</span>
-                    <span id="height"></span>
-                </div>
-                <div class="info-item">
-                    <span>重さ:</span>
-                    <span id="weight"></span>
-                </div>
-                <div class="info-item">
-                    <span>種族:</span>
-                    <span id="species"></span>
-                </div>
-                <div class="info-item">
-                    <span>経験値タイプ:</span>
-                    <span id="expType"></span>
-                </div>
-            </div>
-            
-            <div class="info-section">
-                <h3>特性</h3>
-                <ul id="abilities" class="abilities-list"></ul>
-            </div>
-            
-            <div class="info-section">
-                <h3>ステータス</h3>
-                <div id="stats"></div>
-            </div>
+        <div id="movesContainer">
+            <h3>覚える技一覧</h3>
+            <table class="moves-table">
+                <thead>
+                    <tr>
+                        <th>レベル</th>
+                        <th>技名</th>
+                        <th>タイプ</th>
+                        <th>威力</th>
+                        <th>PP</th>
+                    </tr>
+                </thead>
+                <tbody id="movesList">
+                    <!-- Moves will be inserted here -->
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -244,6 +197,7 @@
             const pokemonCard = document.getElementById('pokemonCard');
             const loadingDiv = document.getElementById('loading');
             const errorDiv = document.getElementById('error');
+            const movesList = document.getElementById('movesList');
             
             // 検索ボタンのクリックイベント
             searchButton.addEventListener('click', searchPokemon);
@@ -276,7 +230,10 @@
                         return response.json();
                     })
                     .then(data => {
-                        displayPokemonData(data);
+                        displayPokemonBasicInfo(data);
+                        return fetchPokemonMoves(data);
+                    })
+                    .then(() => {
                         hideLoading();
                         pokemonCard.style.display = 'block';
                     })
@@ -288,16 +245,13 @@
                     });
             }
             
-            // ポケモンデータを表示する関数
-            function displayPokemonData(pokemon) {
-                // 基本情報を設定
+            // ポケモンの基本情報を表示
+            function displayPokemonBasicInfo(pokemon) {
                 document.getElementById('pokemonName').textContent = capitalizeFirstLetter(pokemon.name);
                 document.getElementById('pokemonNumber').textContent = `#${pokemon.id.toString().padStart(3, '0')}`;
                 document.getElementById('pokemonImage').src = pokemon.sprites.other['official-artwork'].front_default || pokemon.sprites.front_default;
-                document.getElementById('height').textContent = `${pokemon.height / 10}m`;
-                document.getElementById('weight').textContent = `${pokemon.weight / 10}kg`;
-                
-                // 種族の取得
+
+                // 日本語名を取得
                 fetch(pokemon.species.url)
                     .then(response => response.json())
                     .then(speciesData => {
@@ -305,64 +259,61 @@
                         if (japaneseName) {
                             document.getElementById('pokemonName').textContent = japaneseName.name;
                         }
-                        
-                        document.getElementById('species').textContent = capitalizeFirstLetter(speciesData.genera.find(genus => genus.language.name === 'en')?.genus || '不明');
-                        
-                        // 経験値タイプ
-                        document.getElementById('expType').textContent = capitalizeFirstLetter(speciesData.growth_rate.name.replace('-', ' '));
                     });
-                
-                // タイプを設定
-                const typesContainer = document.getElementById('pokemonTypes');
-                typesContainer.innerHTML = '';
-                pokemon.types.forEach(type => {
-                    const typeElement = document.createElement('span');
-                    typeElement.textContent = capitalizeFirstLetter(type.type.name);
-                    typeElement.className = `type-badge ${type.type.name}`;
-                    typesContainer.appendChild(typeElement);
+            }
+            
+            // ポケモンの技を取得して表示
+            async function fetchPokemonMoves(pokemon) {
+                // レベルで覚える技だけをフィルタリング
+                const levelUpMoves = pokemon.moves.filter(move => {
+                    return move.version_group_details.some(detail => detail.move_learn_method.name === 'level-up');
                 });
                 
-                // 特性を設定
-                const abilitiesList = document.getElementById('abilities');
-                abilitiesList.innerHTML = '';
-                pokemon.abilities.forEach(ability => {
-                    const abilityItem = document.createElement('li');
-                    let abilityText = capitalizeFirstLetter(ability.ability.name.replace('-', ' '));
-                    if (ability.is_hidden) {
-                        abilityText += ' (隠れ特性)';
-                    }
-                    abilityItem.textContent = abilityText;
-                    abilitiesList.appendChild(abilityItem);
-                });
+                // テーブルをクリア
+                movesList.innerHTML = '';
                 
-                // ステータスを設定
-                const statsContainer = document.getElementById('stats');
-                statsContainer.innerHTML = '';
-                
-                const statNames = {
-                    'hp': 'HP',
-                    'attack': '攻撃',
-                    'defense': '防御',
-                    'special-attack': '特攻',
-                    'special-defense': '特防',
-                    'speed': '素早さ'
-                };
-                
-                pokemon.stats.forEach(stat => {
-                    const statName = statNames[stat.stat.name] || capitalizeFirstLetter(stat.stat.name);
-                    const statValue = stat.base_stat;
+                // 技の情報を取得
+                const movePromises = levelUpMoves.map(async moveEntry => {
+                    const moveData = await fetch(moveEntry.move.url).then(res => res.json());
                     
-                    const statItem = document.createElement('div');
-                    statItem.innerHTML = `
-                        <div class="info-item">
-                            <span>${statName}:</span>
-                            <span>${statValue}</span>
-                        </div>
-                        <div class="stat-bar">
-                            <div class="stat-fill" style="width: ${Math.min(statValue / 255 * 100, 100)}%;"></div>
-                        </div>
+                    // 最新バージョンでのレベル情報を取得
+                    const versionDetails = moveEntry.version_group_details
+                        .filter(detail => detail.move_learn_method.name === 'level-up')
+                        .sort((a, b) => b.version_group.name.localeCompare(a.version_group.name))[0];
+                    
+                    const level = versionDetails ? versionDetails.level_learned_at : 0;
+                    
+                    return {
+                        level: level,
+                        name: moveData.name,
+                        type: moveData.type.name,
+                        power: moveData.power || '-',
+                        pp: moveData.pp || '-',
+                        moveData: moveData
+                    };
+                });
+                
+                const moves = await Promise.all(movePromises);
+                
+                // レベル順にソート
+                moves.sort((a, b) => a.level - b.level);
+                
+                // テーブルに追加
+                moves.forEach(move => {
+                    const row = document.createElement('tr');
+                    
+                    // 日本語名を探す
+                    const japaneseName = move.moveData.names.find(name => name.language.name === 'ja')?.name || capitalizeFirstLetter(move.name);
+                    
+                    row.innerHTML = `
+                        <td>${move.level === 0 ? '進化時' : move.level}</td>
+                        <td>${japaneseName}</td>
+                        <td><span class="type-badge ${move.type}">${capitalizeFirstLetter(move.type)}</span></td>
+                        <td>${move.power}</td>
+                        <td>${move.pp}</td>
                     `;
-                    statsContainer.appendChild(statItem);
+                    
+                    movesList.appendChild(row);
                 });
             }
             
