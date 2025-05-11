@@ -3,533 +3,832 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ポケモン技一覧</title>
+    <title>ポケモン情報表示</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 900px;
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
-            color: #333;
         }
-
-        h1 {
-            text-align: center;
-            color: #e53935;
-        }
-
-        .search-container {
-            display: flex;
-            margin-bottom: 20px;
-            gap: 10px;
-        }
-
-        input {
-            flex: 1;
-            padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-
-        button {
-            padding: 10px 20px;
-            background-color: #e53935;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-        }
-
-        button:hover {
-            background-color: #c62828;
-        }
-
-        .pokemon-card {
+        .container {
             background-color: white;
             border-radius: 10px;
             padding: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
-            display: none;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-
-        .pokemon-header {
+        h1 {
+            color: #E3350D;
+            text-align: center;
+        }
+        .search-container {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+        }
+        #pokemonInput {
+            padding: 10px;
+            width: 250px;
+            border: 2px solid #E3350D;
+            border-radius: 5px 0 0 5px;
+            font-size: 16px;
+        }
+        #searchButton {
+            padding: 10px 15px;
+            background-color: #E3350D;
+            color: white;
+            border: none;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .pokemon-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .pokemon-basic {
             display: flex;
             align-items: center;
             margin-bottom: 20px;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
         }
-
         .pokemon-image {
+            margin-right: 20px;
+            text-align: center;
+        }
+        .pokemon-sprite {
             width: 120px;
             height: 120px;
-            margin-right: 20px;
+            object-fit: contain;
         }
-
+        .pokemon-details {
+            flex-grow: 1;
+            max-width: 500px;
+        }
         .pokemon-name {
             font-size: 24px;
-            font-weight: bold;
-            margin: 0;
-            color: #333;
+            margin: 0 0 10px 0;
+            color: #E3350D;
         }
-
-        .pokemon-number {
-            color: #757575;
-            font-size: 18px;
-            margin: 5px 0;
-        }
-
-        .version-info {
-            color: #5b5b5b;
-            font-size: 16px;
-            margin: 10px 0;
-            padding: 5px 10px;
-            background-color: #f0f0f0;
-            border-radius: 5px;
+        .type-badge {
             display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin-right: 5px;
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
         }
-
-        .moves-table {
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .stat {
+            flex: 0 0 calc(33.33% - 10px);
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+            padding: 5px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .stat-name {
+            font-weight: bold;
+            color: #555;
+        }
+        .stat-value {
+            font-size: 18px;
+        }
+        table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
+            font-size: 14px;
         }
-
-        .moves-table th, .moves-table td {
+        th, td {
             padding: 8px 10px;
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
-
-        .moves-table th {
-            background-color: #f2f2f2;
-            font-weight: bold;
+        th {
+            background-color: #E3350D;
+            color: white;
+            cursor: pointer;
         }
-
-        .moves-table tr:hover {
+        tr:nth-child(even) {
             background-color: #f9f9f9;
         }
-
-        .type-badge {
-            padding: 3px 10px;
-            border-radius: 20px;
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
-            text-align: center;
-            min-width: 70px;
-            display: inline-block;
+        tr:hover {
+            background-color: #f1f1f1;
         }
-
-        .category-badge {
-            padding: 2px 8px;
-            border-radius: 12px;
-            color: white;
-            font-size: 11px;
-            font-weight: bold;
-            text-align: center;
-            min-width: 50px;
-            display: inline-block;
-        }
-
-        .physical {
-            background-color: #C92112;
-        }
-
-        .special {
-            background-color: #4F5870;
-        }
-
-        .status {
-            background-color: #8C888C;
-        }
-
         .loading {
             text-align: center;
-            font-size: 18px;
-            margin-top: 20px;
+            margin: 20px 0;
             display: none;
         }
-
         .error {
-            background-color: #ffebee;
-            color: #c62828;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 20px;
+            color: red;
+            text-align: center;
+            margin: 20px 0;
             display: none;
         }
-
-        /* Type colors */
-        .normal { background-color: #A8A77A; }
-        .fire { background-color: #EE8130; }
-        .water { background-color: #6390F0; }
-        .electric { background-color: #F7D02C; }
-        .grass { background-color: #7AC74C; }
-        .ice { background-color: #96D9D6; }
-        .fighting { background-color: #C22E28; }
-        .poison { background-color: #A33EA1; }
-        .ground { background-color: #E2BF65; }
-        .flying { background-color: #A98FF3; }
-        .psychic { background-color: #F95587; }
-        .bug { background-color: #A6B91A; }
-        .rock { background-color: #B6A136; }
-        .ghost { background-color: #735797; }
-        .dragon { background-color: #6F35FC; }
-        .dark { background-color: #705746; }
-        .steel { background-color: #B7B7CE; }
-        .fairy { background-color: #D685AD; }
+        .ability-info {
+            margin-top: 5px;
+            font-style: italic;
+            color: #666;
+        }
+        .section-title {
+            color: #E3350D;
+            border-bottom: 2px solid #E3350D;
+            padding-bottom: 5px;
+            margin-top: 20px;
+        }
+        #movesTables {
+            margin-top: 20px;
+        }
+        .type-Normal { background-color: #A8A878; }
+        .type-Fire { background-color: #F08030; }
+        .type-Water { background-color: #6890F0; }
+        .type-Electric { background-color: #F8D030; }
+        .type-Grass { background-color: #78C850; }
+        .type-Ice { background-color: #98D8D8; }
+        .type-Fighting { background-color: #C03028; }
+        .type-Poison { background-color: #A040A0; }
+        .type-Ground { background-color: #E0C068; }
+        .type-Flying { background-color: #A890F0; }
+        .type-Psychic { background-color: #F85888; }
+        .type-Bug { background-color: #A8B820; }
+        .type-Rock { background-color: #B8A038; }
+        .type-Ghost { background-color: #705898; }
+        .type-Dragon { background-color: #7038F8; }
+        .type-Dark { background-color: #705848; }
+        .type-Steel { background-color: #B8B8D0; }
+        .type-Fairy { background-color: #EE99AC; }
+        /* Pokemon suggestions dropdown */
+        .suggestions {
+            position: absolute;
+            background-color: white;
+            width: 250px;
+            max-height: 300px;
+            overflow-y: auto;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            border-radius: 0 0 5px 5px;
+            display: none;
+            z-index: 10;
+        }
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+        }
+        .suggestion-item:hover {
+            background-color: #f1f1f1;
+        }
+        .no-data {
+            text-align: center;
+            color: #666;
+            margin: 20px 0;
+        }
     </style>
 </head>
 <body>
-    <h1>ポケモン技一覧</h1>
-    <div class="search-container">
-        <input type="text" id="pokemonSearch" placeholder="ポケモンの名前または番号を入力（日本語対応）">
-        <button id="searchButton">検索</button>
-    </div>
-    
-    <div id="loading" class="loading">読み込み中...</div>
-    <div id="error" class="error"></div>
-    
-    <div id="pokemonCard" class="pokemon-card">
-        <div class="pokemon-header">
-            <img id="pokemonImage" class="pokemon-image" src="" alt="ポケモン画像">
-            <div>
-                <h2 id="pokemonName" class="pokemon-name"></h2>
-                <p id="pokemonNumber" class="pokemon-number"></p>
-            </div>
+    <div class="container">
+        <h1>ポケモン情報表示</h1>
+        
+        <div class="search-container">
+            <input type="text" id="pokemonInput" placeholder="ポケモン名を入力...">
+            <div class="suggestions" id="suggestions"></div>
+            <button id="searchButton">検索</button>
         </div>
         
-        <div id="movesContainer">
-            <h3>覚える技一覧</h3>
-            <p class="version-info">第六世代（XY/ORAS）での技情報</p>
-            <table class="moves-table">
-                <thead>
-                    <tr>
-                        <th>技名</th>
-                        <th>タイプ</th>
-                        <th>分類</th>
-                        <th>威力</th>
-                        <th>PP</th>
-                        <th>習得方法</th>
-                    </tr>
-                </thead>
-                <tbody id="movesList">
-                    <!-- Moves will be inserted here -->
-                </tbody>
-            </table>
+        <div class="loading" id="loading">Loading...</div>
+        <div class="error" id="error">Pokemon not found!</div>
+        
+        <div class="pokemon-info" id="pokemonInfo" style="display: none;">
+            <div class="pokemon-basic">
+                <div class="pokemon-image">
+                    <img id="pokemonSprite" class="pokemon-sprite" src="" alt="Pokemon sprite">
+                    <div id="pokemonId"></div>
+                </div>
+                <div class="pokemon-details">
+                    <h2 class="pokemon-name" id="pokemonName"></h2>
+                    <div id="pokemonTypes"></div>
+                    <p id="pokemonGenus"></p>
+                    <div id="pokemonAbilities"></div>
+                    <div class="stats-container" id="pokemonStats"></div>
+                </div>
+            </div>
+            
+            <h3 class="section-title">技一覧 (XY)</h3>
+            <div id="movesTables"></div>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('pokemonSearch');
-            const searchButton = document.getElementById('searchButton');
-            const pokemonCard = document.getElementById('pokemonCard');
-            const loadingDiv = document.getElementById('loading');
-            const errorDiv = document.getElementById('error');
-            const movesList = document.getElementById('movesList');
-            
-            // 第六世代のバージョングループ
-            const gen6VersionGroups = ['x-y', 'omega-ruby-alpha-sapphire'];
-            
-            // タイプの日本語名マッピング
-            const typeJapaneseNames = {
-                'normal': 'ノーマル',
-                'fire': 'ほのお',
-                'water': 'みず',
-                'electric': 'でんき',
-                'grass': 'くさ',
-                'ice': 'こおり',
-                'fighting': 'かくとう',
-                'poison': 'どく',
-                'ground': 'じめん',
-                'flying': 'ひこう',
-                'psychic': 'エスパー',
-                'bug': 'むし',
-                'rock': 'いわ',
-                'ghost': 'ゴースト',
-                'dragon': 'ドラゴン',
-                'dark': 'あく',
-                'steel': 'はがね',
-                'fairy': 'フェアリー'
-            };
-            
-            // 習得方法の日本語名マッピング
-            const learnMethodJapaneseNames = {
-                'level-up': 'レベルアップ',
-                'egg': 'タマゴ技',
-                'tutor': '教え技',
-                'machine': '技マシン',
-                'stadium-surfing-pikachu': 'スタジアム特別技',
-                'light-ball-egg': 'でんきだまタマゴ技',
-                'colosseum-purification': 'コロシアム',
-                'xd-shadow': 'XD',
-                'xd-purification': 'XD浄化',
-                'form-change': 'フォルムチェンジ',
-                'zygarde-cube': 'キューブ'
-            };
-            
-            // ポケモン種族リスト（日本語名検索用）
-            let pokemonSpeciesList = [];
-            
-            // 全ポケモン種族を取得（初期化処理）
-            fetch('https://pokeapi.co/api/v2/pokemon-species?limit=1000')
-                .then(response => response.json())
-                .then(data => {
-                    // 全ポケモン種族を取得
-                    return Promise.all(data.results.map(species => 
-                        fetch(species.url).then(res => res.json())
-                    ));
-                })
-                .then(allSpecies => {
-                    // 日本語名とIDのマッピングを作成
-                    pokemonSpeciesList = allSpecies.map(species => {
-                        const jaName = species.names.find(name => name.language.name === 'ja')?.name || species.name;
-                        return {
-                            id: species.id,
-                            name: species.name,
-                            jaName: jaName
-                        };
-                    });
-                    
-                    // 入力欄を有効化
-                    searchInput.disabled = false;
-                    searchInput.placeholder = "ポケモンの名前または番号を入力（日本語対応）";
-                })
-                .catch(error => {
-                    console.error('種族リスト取得エラー:', error);
-                });
-            
-            // 検索ボタンのクリックイベント
-            searchButton.addEventListener('click', searchPokemon);
-            
-            // Enterキーでも検索できるようにする
-            searchInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    searchPokemon();
-                }
-            });
-            
-            // ポケモン検索関数
-            function searchPokemon() {
-                const query = searchInput.value.trim();
+        const pokemonInput = document.getElementById('pokemonInput');
+        const searchButton = document.getElementById('searchButton');
+        const suggestionsDiv = document.getElementById('suggestions');
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        const pokemonInfoDiv = document.getElementById('pokemonInfo');
+        
+        // Japanese Pokemon names mapping (for search functionality)
+        let japanesePokemonNames = {};
+        
+        // Global variables
+        let allPokemon = [];
+        let currentPokemon = null;
+        
+        // Fetch the list of all Pokemon for autocomplete
+        async function fetchAllPokemon() {
+            try {
+                const response = await fetch('https://pokeapi.co/api/v2/pokemon?limit=1000');
+                const data = await response.json();
+                allPokemon = data.results;
                 
-                if (!query) {
-                    showError('ポケモンの名前または番号を入力してください');
-                    return;
-                }
-                
-                showLoading();
-                hideError();
-                
-                // 日本語名で検索された場合、英語名またはIDに変換
-                let searchQuery = query.toLowerCase();
-                
-                // 数字のみの場合はそのまま検索
-                if (/^\d+$/.test(searchQuery)) {
-                    fetchPokemonData(searchQuery);
-                    return;
-                }
-                
-                // 日本語名からIDを検索
-                const matchedPokemon = pokemonSpeciesList.find(p => 
-                    p.jaName === query || p.jaName.toLowerCase() === searchQuery || p.name === searchQuery
-                );
-                
-                if (matchedPokemon) {
-                    fetchPokemonData(matchedPokemon.id);
-                } else {
-                    // 直接APIで検索（英語名の場合）
-                    fetchPokemonData(searchQuery);
-                }
+                // Fetch Japanese names for Pokemon
+                await fetchJapaneseNames();
+            } catch (error) {
+                console.error('ポケモンリストの取得エラー:', error);
             }
-            
-            // PokeAPIからポケモンデータを取得
-            function fetchPokemonData(query) {
-                fetch(`https://pokeapi.co/api/v2/pokemon/${query}`)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('ポケモンが見つかりませんでした');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        displayPokemonBasicInfo(data);
-                        return fetchPokemonMoves(data);
-                    })
-                    .then(() => {
-                        hideLoading();
-                        pokemonCard.style.display = 'block';
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        showError(error.message);
-                        hideLoading();
-                        pokemonCard.style.display = 'none';
-                    });
-            }
-            
-            // ポケモンの基本情報を表示
-            function displayPokemonBasicInfo(pokemon) {
-                document.getElementById('pokemonName').textContent = capitalizeFirstLetter(pokemon.name);
-                document.getElementById('pokemonNumber').textContent = `#${pokemon.id.toString().padStart(3, '0')}`;
-                document.getElementById('pokemonImage').src = pokemon.sprites.other['official-artwork'].front_default || pokemon.sprites.front_default;
-
-                // 日本語名を取得
-                fetch(pokemon.species.url)
-                    .then(response => response.json())
-                    .then(speciesData => {
-                        const japaneseName = speciesData.names.find(name => name.language.name === 'ja');
-                        if (japaneseName) {
-                            document.getElementById('pokemonName').textContent = japaneseName.name;
-                        }
-                    });
-            }
-            
-            // ポケモンの技を取得して表示
-            async function fetchPokemonMoves(pokemon) {
-                // テーブルをクリア
-                movesList.innerHTML = '';
+        }
+        
+        // Fetch Japanese names for Pokemon
+        async function fetchJapaneseNames() {
+            try {
+                // We'll fetch a batch of species to get Japanese names
+                const speciesPromises = [];
                 
-                // 第六世代の技のみをフィルタリング
-                const gen6Moves = pokemon.moves.filter(moveEntry => {
-                    return moveEntry.version_group_details.some(detail => 
-                        gen6VersionGroups.includes(detail.version_group.name)
+                // Limit to first 151 Pokemon initially for performance
+                // You can adjust this number or implement pagination if needed
+                const pokemonLimit = Math.min(allPokemon.length, 500);
+                
+                for (let i = 0; i < pokemonLimit; i++) {
+                    const pokemon = allPokemon[i];
+                    const speciesUrl = `https://pokeapi.co/api/v2/pokemon-species/${pokemon.name}`;
+                    speciesPromises.push(
+                        fetch(speciesUrl)
+                            .then(response => response.json())
+                            .then(speciesData => {
+                                const japaneseName = speciesData.names.find(n => n.language.name === 'ja-Hrkt')?.name ||
+                                                 speciesData.names.find(n => n.language.name === 'ja')?.name;
+                                if (japaneseName) {
+                                    japanesePokemonNames[japaneseName.toLowerCase()] = pokemon.name;
+                                }
+                                return { id: speciesData.id, name: pokemon.name, jaName: japaneseName };
+                            })
+                            .catch(err => {
+                                console.error(`エラー ${pokemon.name}:`, err);
+                                return null;
+                            })
                     );
-                });
-                
-                // 技の詳細情報を取得する
-                const movePromises = gen6Moves.map(async moveEntry => {
-                    const moveData = await fetch(moveEntry.move.url).then(res => res.json());
-                    
-                    // 第六世代のバージョンのみの習得方法を取得
-                    const gen6Details = moveEntry.version_group_details.filter(detail => 
-                        gen6VersionGroups.includes(detail.version_group.name)
-                    );
-                    
-                    // 習得方法の情報を取得
-                    const learnMethods = gen6Details.map(detail => {
-                        const methodName = detail.move_learn_method.name;
-                        const methodJapaneseName = learnMethodJapaneseNames[methodName] || methodName;
-                        
-                        // レベルアップの場合はレベルも表示
-                        let learnDetail = methodJapaneseName;
-                        if (methodName === 'level-up') {
-                            learnDetail += ` (Lv.${detail.level_learned_at})`;
-                        }
-                        
-                        return learnDetail;
-                    });
-                    
-                    // タイプの日本語名を取得
-                    const typeJapaneseName = typeJapaneseNames[moveData.type.name] || moveData.type.name;
-                    
-                    // 日本語名を探す
-                    const japaneseName = moveData.names.find(name => name.language.name === 'ja')?.name || capitalizeFirstLetter(moveData.name);
-                    
-                    // 物理・特殊・変化の判定
-                    let category = '変化';
-                    let categoryClass = 'status';
-                    if (moveData.damage_class) {
-                        if (moveData.damage_class.name === 'physical') {
-                            category = '物理';
-                            categoryClass = 'physical';
-                        } else if (moveData.damage_class.name === 'special') {
-                            category = '特殊';
-                            categoryClass = 'special';
-                        }
-                    }
-                    
-                    // カテゴリーの数値変換（ソート用）
-                    const categoryValue = {
-                        'physical': 3,  // 物理
-                        'special': 2,   // 特殊
-                        'status': 1     // 変化
-                    }[moveData.damage_class?.name || 'status'];
-                    
-                    return {
-                        name: japaneseName,
-                        type: moveData.type.name,
-                        typeJapanese: typeJapaneseName,
-                        power: moveData.power || 0,
-                        pp: moveData.pp || '-',
-                        category: category,
-                        categoryClass: categoryClass,
-                        categoryValue: categoryValue,
-                        learnMethods: learnMethods
-                    };
-                });
-                
-                let moves = await Promise.all(movePromises);
-                
-                // ソート: 物理技→特殊技→変化技の順、そして各カテゴリ内では威力が高い順
-                moves.sort((a, b) => {
-                    // まずカテゴリでソート（物理 → 特殊 → 変化）
-                    if (a.categoryValue !== b.categoryValue) {
-                        return b.categoryValue - a.categoryValue;
-                    }
-                    // 次に威力の高い順
-                    return b.power - a.power;
-                });
-                
-                // テーブルに追加
-                moves.forEach(move => {
-                    // すべての習得方法を表示
-                    const learnMethodsText = move.learnMethods.join('、');
-                    
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${move.name}</td>
-                        <td><span class="type-badge ${move.type}">${move.typeJapanese}</span></td>
-                        <td><span class="category-badge ${move.categoryClass}">${move.category}</span></td>
-                        <td>${move.power || '-'}</td>
-                        <td>${move.pp}</td>
-                        <td>${learnMethodsText}</td>
-                    `;
-                    
-                    movesList.appendChild(row);
-                });
-                
-                // 技が見つからない場合のメッセージ
-                if (moves.length === 0) {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td colspan="6" style="text-align: center; padding: 20px;">
-                            このポケモンは第六世代で技を覚えないか、データが見つかりませんでした。
-                        </td>
-                    `;
-                    movesList.appendChild(row);
                 }
+                
+                // Wait for all species data
+                const pokemonSpecies = await Promise.all(speciesPromises);
+                console.log("日本語名取得完了:", Object.keys(japanesePokemonNames).length);
+            } catch (error) {
+                console.error('日本語名の取得エラー:', error);
             }
-            
-            // 最初の文字を大文字にする関数
-            function capitalizeFirstLetter(string) {
-                return string.charAt(0).toUpperCase() + string.slice(1);
-            }
-            
-            // ローディング表示
-            function showLoading() {
-                loadingDiv.style.display = 'block';
-            }
-            
-            function hideLoading() {
-                loadingDiv.style.display = 'none';
-            }
-            
-            // エラー表示
-            function showError(message) {
-                errorDiv.textContent = message;
-                errorDiv.style.display = 'block';
-            }
-            
-            function hideError() {
-                errorDiv.style.display = 'none';
+        }
+        
+        // Initialize the app
+        fetchAllPokemon();
+        
+        // Search when button is clicked
+        searchButton.addEventListener('click', () => {
+            const pokemonName = pokemonInput.value.toLowerCase().trim();
+            if (pokemonName) {
+                searchPokemon(pokemonName);
             }
         });
+        
+        // Search when Enter key is pressed
+        pokemonInput.addEventListener('keyup', (event) => {
+            if (event.key === 'Enter') {
+                const pokemonName = pokemonInput.value.toLowerCase().trim();
+                if (pokemonName) {
+                    searchPokemon(pokemonName);
+                }
+                suggestionsDiv.style.display = 'none';
+            } else {
+                // Show suggestions
+                showSuggestions(pokemonInput.value.toLowerCase().trim());
+            }
+        });
+        
+        // Show suggestions based on input
+        function showSuggestions(query) {
+            if (query.length < 2) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+            
+            // Filter English names
+            const filteredEnglishPokemon = allPokemon.filter(p => 
+                p.name.includes(query)
+            ).slice(0, 5);
+            
+            // Filter Japanese names
+            const filteredJapanesePokemon = [];
+            for (const [jaName, enName] of Object.entries(japanesePokemonNames)) {
+                if (jaName.includes(query)) {
+                    // Find the original pokemon object
+                    const pokemonObj = allPokemon.find(p => p.name === enName);
+                    if (pokemonObj) {
+                        filteredJapanesePokemon.push({
+                            name: enName,
+                            japaneseName: jaName
+                        });
+                    }
+                    
+                    if (filteredJapanesePokemon.length >= 5) break;
+                }
+            }
+            
+            // Combine results (prioritize Japanese matches if searching in Japanese)
+            let filteredPokemon = [];
+            if (query.match(/[\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF]/)) {
+                // If query contains Japanese characters, prioritize Japanese results
+                filteredPokemon = [...filteredJapanesePokemon, ...filteredEnglishPokemon].slice(0, 10);
+            } else {
+                filteredPokemon = [...filteredEnglishPokemon, ...filteredJapanesePokemon].slice(0, 10);
+            }
+            
+            if (filteredPokemon.length > 0) {
+                suggestionsDiv.innerHTML = '';
+                filteredPokemon.forEach(pokemon => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    
+                    // Display Japanese name if available
+                    if (pokemon.japaneseName) {
+                        div.textContent = pokemon.japaneseName;
+                        div.addEventListener('click', () => {
+                            pokemonInput.value = pokemon.japaneseName;
+                            suggestionsDiv.style.display = 'none';
+                            searchPokemon(pokemon.name);
+                        });
+                    } else {
+                        div.textContent = capitalizeFirstLetter(pokemon.name);
+                        div.addEventListener('click', () => {
+                            pokemonInput.value = pokemon.name;
+                            suggestionsDiv.style.display = 'none';
+                            searchPokemon(pokemon.name);
+                        });
+                    }
+                    
+                    suggestionsDiv.appendChild(div);
+                });
+                suggestionsDiv.style.display = 'block';
+                suggestionsDiv.style.top = (pokemonInput.offsetTop + pokemonInput.offsetHeight) + 'px';
+                suggestionsDiv.style.left = pokemonInput.offsetLeft + 'px';
+            } else {
+                suggestionsDiv.style.display = 'none';
+            }
+        }
+        
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', (event) => {
+            if (event.target !== pokemonInput && event.target !== suggestionsDiv) {
+                suggestionsDiv.style.display = 'none';
+            }
+        });
+        
+        // Search for Pokemon data
+        async function searchPokemon(nameOrId) {
+            // Show loading, hide error and result
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+            pokemonInfoDiv.style.display = 'none';
+            
+            try {
+                // Check if input is a Japanese name and convert if needed
+                let searchName = nameOrId.toString().toLowerCase();
+                if (japanesePokemonNames[searchName]) {
+                    searchName = japanesePokemonNames[searchName];
+                }
+                
+                // Fetch basic Pokemon data
+                const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${searchName}`);
+                if (!response.ok) {
+                    throw new Error('Pokemon not found');
+                }
+                const pokemonData = await response.json();
+                currentPokemon = pokemonData;
+                
+                // Fetch species data for additional info
+                const speciesResponse = await fetch(pokemonData.species.url);
+                const speciesData = await speciesResponse.json();
+                
+                // Display Pokemon info
+                displayPokemonInfo(pokemonData, speciesData);
+                
+                // Hide loading, show result
+                loadingDiv.style.display = 'none';
+                pokemonInfoDiv.style.display = 'block';
+            } catch (error) {
+                console.error('Error fetching Pokemon data:', error);
+                loadingDiv.style.display = 'none';
+                errorDiv.style.display = 'block';
+            }
+        }
+        
+        // Display Pokemon information
+        function displayPokemonInfo(pokemon, species) {
+            // Basic info - try to get Japanese name
+            const japaneseName = species.names.find(n => n.language.name === 'ja-Hrkt')?.name || 
+                             species.names.find(n => n.language.name === 'ja')?.name || 
+                             capitalizeFirstLetter(pokemon.name);
+            document.getElementById('pokemonName').textContent = `#${pokemon.id} ${japaneseName}`;
+            document.getElementById('pokemonId').textContent = `全国図鑑: #${pokemon.id}`;
+            
+            // Sprite - use official artwork if available
+            const spriteUrl = pokemon.sprites.other['official-artwork'].front_default || 
+                            pokemon.sprites.front_default;
+            document.getElementById('pokemonSprite').src = spriteUrl;
+            
+            // Types
+            const typesDiv = document.getElementById('pokemonTypes');
+            typesDiv.innerHTML = '';
+            pokemon.types.forEach(typeInfo => {
+                const typeSpan = document.createElement('span');
+                typeSpan.className = `type-badge type-${capitalizeFirstLetter(typeInfo.type.name)}`;
+                typeSpan.textContent = capitalizeFirstLetter(typeInfo.type.name);
+                typesDiv.appendChild(typeSpan);
+            });
+            
+            // Genus/Classification (優先的に日本語を使用)
+            const japaneseGenus = species.genera.find(g => g.language.name === 'ja');
+            const englishGenus = species.genera.find(g => g.language.name === 'en');
+            document.getElementById('pokemonGenus').textContent = japaneseGenus ? japaneseGenus.genus : (englishGenus ? englishGenus.genus : '');
+            
+            // Abilities
+            const abilitiesDiv = document.getElementById('pokemonAbilities');
+            abilitiesDiv.innerHTML = '<strong>特性:</strong> ';
+            
+            // Create an array to store ability fetch promises
+            const abilityPromises = pokemon.abilities.map(abilityInfo => 
+                fetch(abilityInfo.ability.url).then(response => response.json())
+            );
+            
+            // Fetch all abilities in parallel
+            Promise.all(abilityPromises)
+                .then(abilities => {
+                    abilities.forEach((ability, index) => {
+                        const abilityInfo = pokemon.abilities[index];
+                        const abilityName = capitalizeFirstLetter(ability.name.replace('-', ' '));
+                        
+                        const abilitySpan = document.createElement('span');
+                        abilitySpan.textContent = abilityName + (abilityInfo.is_hidden ? ' (Hidden)' : '');
+                        abilitiesDiv.appendChild(abilitySpan);
+                        
+                        // Add ability description
+                        const englishEffect = ability.effect_entries.find(e => e.language.name === 'en');
+                        if (englishEffect) {
+                            const abilityDescription = document.createElement('div');
+                            abilityDescription.className = 'ability-info';
+                            abilityDescription.textContent = englishEffect.short_effect;
+                            abilitiesDiv.appendChild(abilityDescription);
+                        }
+                        
+                        // Add separator if not the last ability
+                        if (index < abilities.length - 1) {
+                            abilitiesDiv.appendChild(document.createElement('br'));
+                        }
+                    });
+                })
+                .catch(error => console.error('Error fetching ability data:', error));
+            
+            // Stats
+            const statsDiv = document.getElementById('pokemonStats');
+            statsDiv.innerHTML = '';
+            
+            const statNames = {
+                'hp': 'HP',
+                'attack': '攻撃',
+                'defense': '防御',
+                'special-attack': '特攻',
+                'special-defense': '特防',
+                'speed': '素早さ'
+            };
+            
+            pokemon.stats.forEach(statInfo => {
+                const statDiv = document.createElement('div');
+                statDiv.className = 'stat';
+                
+                const statNameDiv = document.createElement('div');
+                statNameDiv.className = 'stat-name';
+                statNameDiv.textContent = statNames[statInfo.stat.name] || statInfo.stat.name;
+                
+                const statValueDiv = document.createElement('div');
+                statValueDiv.className = 'stat-value';
+                statValueDiv.textContent = statInfo.base_stat;
+                
+                statDiv.appendChild(statNameDiv);
+                statDiv.appendChild(statValueDiv);
+                statsDiv.appendChild(statDiv);
+            });
+            
+            // Fetch and display moves
+            fetchAndDisplayMoves(pokemon);
+        }
+        
+        // Fetch and display moves
+        async function fetchAndDisplayMoves(pokemon) {
+            const movesTables = document.getElementById('movesTables');
+                            movesTables.innerHTML = '<div class="loading">技データを読み込み中...</div>';
+            
+            try {
+                // Get Pokemon types for STAB calculation
+                const pokemonTypes = pokemon.types.map(t => t.type.name);
+                
+                // Process moves
+                const physicalMoves = [];
+                const specialMoves = [];
+                const statusMoves = [];
+                
+                // Create an array of promises for fetching move details
+                const movePromises = pokemon.moves.map(moveInfo => {
+                    return fetch(moveInfo.move.url)
+                        .then(response => response.json())
+                        .then(moveData => {
+                            // Check if the move can be learned in XY
+                            const xyVersionGroup = moveInfo.version_group_details.find(
+                                detail => detail.version_group.name === 'x-y'
+                            );
+                            
+                            if (xyVersionGroup) {
+                                // Get basic move info
+                                const moveDetails = {
+                                    name: capitalizeFirstLetter(moveData.name.replace('-', ' ')),
+                                    type: moveData.type.name,
+                                    power: moveData.power || '—',
+                                    accuracy: moveData.accuracy || '—',
+                                    pp: moveData.pp,
+                                    damageClass: moveData.damage_class.name,
+                                    learnMethod: xyVersionGroup.move_learn_method.name.replace('-', ' '),
+                                    levelLearned: xyVersionGroup.level_learned_at,
+                                    // Get TM number if applicable
+                                    tmNumber: moveData.machines.find(m => 
+                                        m.machine.url.includes('machine/') && 
+                                        m.version_group.name === 'x-y'
+                                    )?.machine.url.split('machine/')[1]?.split('/')[0] || null
+                                };
+
+                                // Calculate STAB power if applicable
+                                if (moveData.power && pokemonTypes.includes(moveData.type.name)) {
+                                    moveDetails.stabPower = Math.floor(moveData.power * 1.5);
+                                }
+                                
+                                // Sort into appropriate array based on damage class
+                                if (moveData.damage_class.name === 'physical') {
+                                    physicalMoves.push(moveDetails);
+                                } else if (moveData.damage_class.name === 'special') {
+                                    specialMoves.push(moveDetails);
+                                } else if (moveData.damage_class.name === 'status') {
+                                    statusMoves.push(moveDetails);
+                                }
+                            }
+                        });
+                });
+                
+                // Wait for all move data to be fetched
+                await Promise.all(movePromises);
+                
+                // Clear loading message
+                movesTables.innerHTML = '';
+                
+                // Sort moves by STAB power first (if available), then regular power
+                const sortMoves = (moves) => {
+                    return moves.sort((a, b) => {
+                        const powerA = a.stabPower || a.power;
+                        const powerB = b.stabPower || b.power;
+                        
+                        // Handle "—" cases
+                        if (powerA === '—' && powerB === '—') return 0;
+                        if (powerA === '—') return 1;
+                        if (powerB === '—') return -1;
+                        
+                        return powerB - powerA; // Sort by power in descending order
+                    });
+                };
+                
+                // Sort all move arrays
+                const sortedPhysicalMoves = sortMoves(physicalMoves);
+                const sortedSpecialMoves = sortMoves(specialMoves);
+                const sortedStatusMoves = sortMoves(statusMoves);
+                
+                // Create Physical Moves Table
+                if (sortedPhysicalMoves.length > 0) {
+                    movesTables.appendChild(createMovesTable('Physical Moves', sortedPhysicalMoves, pokemonTypes));
+                }
+                
+                // Create Special Moves Table
+                if (sortedSpecialMoves.length > 0) {
+                    movesTables.appendChild(createMovesTable('Special Moves', sortedSpecialMoves, pokemonTypes));
+                }
+                
+                // Create Status Moves Table
+                if (sortedStatusMoves.length > 0) {
+                    movesTables.appendChild(createMovesTable('Status Moves', sortedStatusMoves, pokemonTypes));
+                }
+                
+                // If no moves found
+                if (sortedPhysicalMoves.length === 0 && sortedSpecialMoves.length === 0 && sortedStatusMoves.length === 0) {
+                    const noMovesDiv = document.createElement('div');
+                    noMovesDiv.className = 'no-data';
+                    noMovesDiv.textContent = 'XYで覚える技がありません。';
+                    movesTables.appendChild(noMovesDiv);
+                }
+                
+            } catch (error) {
+                console.error('Error fetching moves data:', error);
+                movesTables.innerHTML = '<div class="error">技データの読み込み中にエラーが発生しました。</div>';
+            }
+        }
+        
+        // Create a table for moves
+        function createMovesTable(title, moves, pokemonTypes) {
+            const sectionDiv = document.createElement('div');
+            
+            const sectionTitle = document.createElement('h4');
+            sectionTitle.textContent = title === 'Physical Moves' ? '物理技' : 
+                                     title === 'Special Moves' ? '特殊技' : '変化技';
+            sectionTitle.className = 'section-title';
+            sectionDiv.appendChild(sectionTitle);
+            
+            const table = document.createElement('table');
+            
+            // Create table header
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            
+            const headers = ['名前', 'タイプ', '威力', '命中率', 'PP', '習得方法'];
+            headers.forEach(headerText => {
+                const th = document.createElement('th');
+                th.textContent = headerText;
+                
+                // Add sorting functionality
+                if (headerText === '威力') {
+                    th.addEventListener('click', () => sortTable(table, 2));
+                }
+                headerRow.appendChild(th);
+            });
+            
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            
+            // Create table body
+            const tbody = document.createElement('tbody');
+            
+            moves.forEach(move => {
+                const row = document.createElement('tr');
+                
+                // Name cell - try to find Japanese move name from common translations
+                // This is a simplified approach - ideally we would fetch the Japanese name from the API
+                const nameCell = document.createElement('td');
+                
+                // Try to use Japanese move names if we have a mapping
+                // In a full implementation, we would fetch these from the API
+                const commonMoveTranslations = {
+                    "Tackle": "たいあたり",
+                    "Scratch": "ひっかく",
+                    "Growl": "なきごえ",
+                    "Leer": "にらみつける",
+                    "Tail Whip": "しっぽをふる",
+                    "Ember": "
+                
+                // Type cell
+                const typeCell = document.createElement('td');
+                const typeSpan = document.createElement('span');
+                typeSpan.className = `type-badge type-${capitalizeFirstLetter(move.type)}`;
+                
+                // Japanese type names
+                const typeNames = {
+                    'normal': 'ノーマル',
+                    'fire': 'ほのお',
+                    'water': 'みず',
+                    'electric': 'でんき',
+                    'grass': 'くさ',
+                    'ice': 'こおり',
+                    'fighting': 'かくとう',
+                    'poison': 'どく',
+                    'ground': 'じめん',
+                    'flying': 'ひこう',
+                    'psychic': 'エスパー',
+                    'bug': 'むし',
+                    'rock': 'いわ',
+                    'ghost': 'ゴースト',
+                    'dragon': 'ドラゴン',
+                    'dark': 'あく',
+                    'steel': 'はがね',
+                    'fairy': 'フェアリー'
+                };
+                
+                typeSpan.textContent = typeNames[move.type] || capitalizeFirstLetter(move.type);
+                typeCell.appendChild(typeSpan);
+                row.appendChild(typeCell);
+                
+                // Power cell
+                const powerCell = document.createElement('td');
+                if (move.power !== '—') {
+                    if (pokemonTypes.includes(move.type)) {
+                        powerCell.textContent = `${move.power} (${move.stabPower})`;
+                    } else {
+                        powerCell.textContent = move.power;
+                    }
+                } else {
+                    powerCell.textContent = move.power;
+                }
+                row.appendChild(powerCell);
+                
+                // Accuracy cell
+                const accuracyCell = document.createElement('td');
+                accuracyCell.textContent = move.accuracy !== '—' ? `${move.accuracy}%` : move.accuracy;
+                row.appendChild(accuracyCell);
+                
+                // PP cell
+                const ppCell = document.createElement('td');
+                ppCell.textContent = move.pp;
+                row.appendChild(ppCell);
+                
+                // Learn Method cell
+                const methodCell = document.createElement('td');
+                if (move.learnMethod === 'level up') {
+                    methodCell.textContent = `レベル ${move.levelLearned}`;
+                } else if (move.learnMethod === 'machine' && move.tmNumber) {
+                    methodCell.textContent = `技マシン ${move.tmNumber}`;
+                } else if (move.learnMethod === 'egg') {
+                    methodCell.textContent = `タマゴわざ`;
+                } else if (move.learnMethod === 'tutor') {
+                    methodCell.textContent = `教え技`;
+                } else {
+                    methodCell.textContent = capitalizeFirstLetter(move.learnMethod);
+                }
+                row.appendChild(methodCell);
+                
+                tbody.appendChild(row);
+            });
+            
+            table.appendChild(tbody);
+            sectionDiv.appendChild(table);
+            
+            return sectionDiv;
+        }
+        
+        // Sort table by column
+        function sortTable(table, colIndex) {
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            rows.sort((a, b) => {
+                let valueA = a.cells[colIndex].textContent.trim();
+                let valueB = b.cells[colIndex].textContent.trim();
+                
+                // Handle power sorting with STAB values in parentheses
+                if (colIndex === 2) { // Power column
+                    // Extract STAB value if available, otherwise use regular power
+                    valueA = extractPowerValue(valueA);
+                    valueB = extractPowerValue(valueB);
+                    
+                    // Handle "—" cases
+                    if (valueA === '—' && valueB === '—') return 0;
+                    if (valueA === '—') return 1;
+                    if (valueB === '—') return -1;
+                    
+                    return valueB - valueA; // Descending order for power
+                }
+                
+                return valueA.localeCompare(valueB);
+            });
+            
+            // Reattach sorted rows
+            rows.forEach(row => tbody.appendChild(row));
+        }
+        
+        // Extract highest power value (regular or STAB)
+        function extractPowerValue(powerText) {
+            if (powerText === '—') return powerText;
+            
+            // Check if there's a STAB value in parentheses
+            const match = powerText.match(/\((\d+)\)/);
+            if (match) {
+                return parseInt(match[1]); // Return STAB value
+            }
+            
+            return parseInt(powerText);
+        }
+        
+        // Helper function to capitalize first letter
+        function capitalizeFirstLetter(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1);
+        }
     </script>
 </body>
 </html>
