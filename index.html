@@ -82,6 +82,16 @@
             margin: 5px 0;
         }
 
+        .version-info {
+            color: #5b5b5b;
+            font-size: 16px;
+            margin: 10px 0;
+            padding: 5px 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            display: inline-block;
+        }
+
         .moves-table {
             width: 100%;
             border-collapse: collapse;
@@ -177,7 +187,7 @@
 <body>
     <h1>ポケモン技一覧</h1>
     <div class="search-container">
-        <input type="text" id="pokemonSearch" placeholder="ポケモンの名前または番号を入力">
+        <input type="text" id="pokemonSearch" placeholder="ポケモンの名前または番号を入力（日本語対応）">
         <button id="searchButton">検索</button>
     </div>
     
@@ -195,15 +205,16 @@
         
         <div id="movesContainer">
             <h3>覚える技一覧</h3>
+            <p class="version-info">第六世代（XY/ORAS）での技情報</p>
             <table class="moves-table">
                 <thead>
                     <tr>
-                        <th>習得方法</th>
                         <th>技名</th>
                         <th>タイプ</th>
                         <th>分類</th>
                         <th>威力</th>
                         <th>PP</th>
+                        <th>習得方法</th>
                     </tr>
                 </thead>
                 <tbody id="movesList">
@@ -221,6 +232,9 @@
             const loadingDiv = document.getElementById('loading');
             const errorDiv = document.getElementById('error');
             const movesList = document.getElementById('movesList');
+            
+            // 第六世代のバージョングループ
+            const gen6VersionGroups = ['x-y', 'omega-ruby-alpha-sapphire'];
             
             // タイプの日本語名マッピング
             const typeJapaneseNames = {
@@ -259,6 +273,37 @@
                 'zygarde-cube': 'キューブ'
             };
             
+            // ポケモン種族リスト（日本語名検索用）
+            let pokemonSpeciesList = [];
+            
+            // 全ポケモン種族を取得（初期化処理）
+            fetch('https://pokeapi.co/api/v2/pokemon-species?limit=1000')
+                .then(response => response.json())
+                .then(data => {
+                    // 全ポケモン種族を取得
+                    return Promise.all(data.results.map(species => 
+                        fetch(species.url).then(res => res.json())
+                    ));
+                })
+                .then(allSpecies => {
+                    // 日本語名とIDのマッピングを作成
+                    pokemonSpeciesList = allSpecies.map(species => {
+                        const jaName = species.names.find(name => name.language.name === 'ja')?.name || species.name;
+                        return {
+                            id: species.id,
+                            name: species.name,
+                            jaName: jaName
+                        };
+                    });
+                    
+                    // 入力欄を有効化
+                    searchInput.disabled = false;
+                    searchInput.placeholder = "ポケモンの名前または番号を入力（日本語対応）";
+                })
+                .catch(error => {
+                    console.error('種族リスト取得エラー:', error);
+                });
+            
             // 検索ボタンのクリックイベント
             searchButton.addEventListener('click', searchPokemon);
             
@@ -271,7 +316,7 @@
             
             // ポケモン検索関数
             function searchPokemon() {
-                const query = searchInput.value.toLowerCase().trim();
+                const query = searchInput.value.trim();
                 
                 if (!query) {
                     showError('ポケモンの名前または番号を入力してください');
@@ -281,7 +326,30 @@
                 showLoading();
                 hideError();
                 
-                // PokeAPIを呼び出す
+                // 日本語名で検索された場合、英語名またはIDに変換
+                let searchQuery = query.toLowerCase();
+                
+                // 数字のみの場合はそのまま検索
+                if (/^\d+$/.test(searchQuery)) {
+                    fetchPokemonData(searchQuery);
+                    return;
+                }
+                
+                // 日本語名からIDを検索
+                const matchedPokemon = pokemonSpeciesList.find(p => 
+                    p.jaName === query || p.jaName.toLowerCase() === searchQuery || p.name === searchQuery
+                );
+                
+                if (matchedPokemon) {
+                    fetchPokemonData(matchedPokemon.id);
+                } else {
+                    // 直接APIで検索（英語名の場合）
+                    fetchPokemonData(searchQuery);
+                }
+            }
+            
+            // PokeAPIからポケモンデータを取得
+            function fetchPokemonData(query) {
                 fetch(`https://pokeapi.co/api/v2/pokemon/${query}`)
                     .then(response => {
                         if (!response.ok) {
@@ -327,12 +395,24 @@
                 // テーブルをクリア
                 movesList.innerHTML = '';
                 
+                // 第六世代の技のみをフィルタリング
+                const gen6Moves = pokemon.moves.filter(moveEntry => {
+                    return moveEntry.version_group_details.some(detail => 
+                        gen6VersionGroups.includes(detail.version_group.name)
+                    );
+                });
+                
                 // 技の詳細情報を取得する
-                const movePromises = pokemon.moves.map(async moveEntry => {
+                const movePromises = gen6Moves.map(async moveEntry => {
                     const moveData = await fetch(moveEntry.move.url).then(res => res.json());
                     
+                    // 第六世代のバージョンのみの習得方法を取得
+                    const gen6Details = moveEntry.version_group_details.filter(detail => 
+                        gen6VersionGroups.includes(detail.version_group.name)
+                    );
+                    
                     // 習得方法の情報を取得
-                    const learnMethods = moveEntry.version_group_details.map(detail => {
+                    const learnMethods = gen6Details.map(detail => {
                         const methodName = detail.move_learn_method.name;
                         const methodJapaneseName = learnMethodJapaneseNames[methodName] || methodName;
                         
@@ -342,24 +422,7 @@
                             learnDetail += ` (Lv.${detail.level_learned_at})`;
                         }
                         
-                        return {
-                            name: methodName,
-                            displayName: learnDetail,
-                            level: methodName === 'level-up' ? detail.level_learned_at : 999
-                        };
-                    });
-                    
-                    // 最新のバージョンで絞り込む（最新バージョングループを取得）
-                    // バージョングループをバージョン名でソートして最新を選択
-                    const latestVersionGroup = moveEntry.version_group_details
-                        .sort((a, b) => b.version_group.name.localeCompare(a.version_group.name))[0];
-                    
-                    const latestLearnMethods = learnMethods.filter(method => {
-                        const methodDetail = moveEntry.version_group_details.find(detail => 
-                            detail.move_learn_method.name === method.name && 
-                            detail.version_group.name === latestVersionGroup.version_group.name
-                        );
-                        return methodDetail !== undefined;
+                        return learnDetail;
                     });
                     
                     // タイプの日本語名を取得
@@ -397,7 +460,7 @@
                         category: category,
                         categoryClass: categoryClass,
                         categoryValue: categoryValue,
-                        learnMethods: latestLearnMethods
+                        learnMethods: learnMethods
                     };
                 });
                 
@@ -416,20 +479,31 @@
                 // テーブルに追加
                 moves.forEach(move => {
                     // すべての習得方法を表示
-                    const learnMethodsText = move.learnMethods.map(method => method.displayName).join('、');
+                    const learnMethodsText = move.learnMethods.join('、');
                     
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${learnMethodsText}</td>
                         <td>${move.name}</td>
                         <td><span class="type-badge ${move.type}">${move.typeJapanese}</span></td>
                         <td><span class="category-badge ${move.categoryClass}">${move.category}</span></td>
                         <td>${move.power || '-'}</td>
                         <td>${move.pp}</td>
+                        <td>${learnMethodsText}</td>
                     `;
                     
                     movesList.appendChild(row);
                 });
+                
+                // 技が見つからない場合のメッセージ
+                if (moves.length === 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td colspan="6" style="text-align: center; padding: 20px;">
+                            このポケモンは第六世代で技を覚えないか、データが見つかりませんでした。
+                        </td>
+                    `;
+                    movesList.appendChild(row);
+                }
             }
             
             // 最初の文字を大文字にする関数
