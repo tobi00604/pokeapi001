@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
@@ -89,7 +89,7 @@
         }
 
         .moves-table th, .moves-table td {
-            padding: 10px;
+            padding: 8px 10px;
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
@@ -109,10 +109,32 @@
             color: white;
             font-size: 12px;
             font-weight: bold;
-            text-transform: capitalize;
-            display: inline-block;
             text-align: center;
             min-width: 70px;
+            display: inline-block;
+        }
+
+        .category-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            text-align: center;
+            min-width: 50px;
+            display: inline-block;
+        }
+
+        .physical {
+            background-color: #C92112;
+        }
+
+        .special {
+            background-color: #4F5870;
+        }
+
+        .status {
+            background-color: #8C888C;
         }
 
         .loading {
@@ -176,9 +198,10 @@
             <table class="moves-table">
                 <thead>
                     <tr>
-                        <th>レベル</th>
+                        <th>習得方法</th>
                         <th>技名</th>
                         <th>タイプ</th>
+                        <th>分類</th>
                         <th>威力</th>
                         <th>PP</th>
                     </tr>
@@ -198,6 +221,43 @@
             const loadingDiv = document.getElementById('loading');
             const errorDiv = document.getElementById('error');
             const movesList = document.getElementById('movesList');
+            
+            // タイプの日本語名マッピング
+            const typeJapaneseNames = {
+                'normal': 'ノーマル',
+                'fire': 'ほのお',
+                'water': 'みず',
+                'electric': 'でんき',
+                'grass': 'くさ',
+                'ice': 'こおり',
+                'fighting': 'かくとう',
+                'poison': 'どく',
+                'ground': 'じめん',
+                'flying': 'ひこう',
+                'psychic': 'エスパー',
+                'bug': 'むし',
+                'rock': 'いわ',
+                'ghost': 'ゴースト',
+                'dragon': 'ドラゴン',
+                'dark': 'あく',
+                'steel': 'はがね',
+                'fairy': 'フェアリー'
+            };
+            
+            // 習得方法の日本語名マッピング
+            const learnMethodJapaneseNames = {
+                'level-up': 'レベルアップ',
+                'egg': 'タマゴ技',
+                'tutor': '教え技',
+                'machine': '技マシン',
+                'stadium-surfing-pikachu': 'スタジアム特別技',
+                'light-ball-egg': 'でんきだまタマゴ技',
+                'colosseum-purification': 'コロシアム',
+                'xd-shadow': 'XD',
+                'xd-purification': 'XD浄化',
+                'form-change': 'フォルムチェンジ',
+                'zygarde-cube': 'キューブ'
+            };
             
             // 検索ボタンのクリックイベント
             searchButton.addEventListener('click', searchPokemon);
@@ -264,52 +324,107 @@
             
             // ポケモンの技を取得して表示
             async function fetchPokemonMoves(pokemon) {
-                // レベルで覚える技だけをフィルタリング
-                const levelUpMoves = pokemon.moves.filter(move => {
-                    return move.version_group_details.some(detail => detail.move_learn_method.name === 'level-up');
-                });
-                
                 // テーブルをクリア
                 movesList.innerHTML = '';
                 
-                // 技の情報を取得
-                const movePromises = levelUpMoves.map(async moveEntry => {
+                // 技の詳細情報を取得する
+                const movePromises = pokemon.moves.map(async moveEntry => {
                     const moveData = await fetch(moveEntry.move.url).then(res => res.json());
                     
-                    // 最新バージョンでのレベル情報を取得
-                    const versionDetails = moveEntry.version_group_details
-                        .filter(detail => detail.move_learn_method.name === 'level-up')
+                    // 習得方法の情報を取得
+                    const learnMethods = moveEntry.version_group_details.map(detail => {
+                        const methodName = detail.move_learn_method.name;
+                        const methodJapaneseName = learnMethodJapaneseNames[methodName] || methodName;
+                        
+                        // レベルアップの場合はレベルも表示
+                        let learnDetail = methodJapaneseName;
+                        if (methodName === 'level-up') {
+                            learnDetail += ` (Lv.${detail.level_learned_at})`;
+                        }
+                        
+                        return {
+                            name: methodName,
+                            displayName: learnDetail,
+                            level: methodName === 'level-up' ? detail.level_learned_at : 999
+                        };
+                    });
+                    
+                    // 最新のバージョンで絞り込む（最新バージョングループを取得）
+                    // バージョングループをバージョン名でソートして最新を選択
+                    const latestVersionGroup = moveEntry.version_group_details
                         .sort((a, b) => b.version_group.name.localeCompare(a.version_group.name))[0];
                     
-                    const level = versionDetails ? versionDetails.level_learned_at : 0;
+                    const latestLearnMethods = learnMethods.filter(method => {
+                        const methodDetail = moveEntry.version_group_details.find(detail => 
+                            detail.move_learn_method.name === method.name && 
+                            detail.version_group.name === latestVersionGroup.version_group.name
+                        );
+                        return methodDetail !== undefined;
+                    });
+                    
+                    // タイプの日本語名を取得
+                    const typeJapaneseName = typeJapaneseNames[moveData.type.name] || moveData.type.name;
+                    
+                    // 日本語名を探す
+                    const japaneseName = moveData.names.find(name => name.language.name === 'ja')?.name || capitalizeFirstLetter(moveData.name);
+                    
+                    // 物理・特殊・変化の判定
+                    let category = '変化';
+                    let categoryClass = 'status';
+                    if (moveData.damage_class) {
+                        if (moveData.damage_class.name === 'physical') {
+                            category = '物理';
+                            categoryClass = 'physical';
+                        } else if (moveData.damage_class.name === 'special') {
+                            category = '特殊';
+                            categoryClass = 'special';
+                        }
+                    }
+                    
+                    // カテゴリーの数値変換（ソート用）
+                    const categoryValue = {
+                        'physical': 3,  // 物理
+                        'special': 2,   // 特殊
+                        'status': 1     // 変化
+                    }[moveData.damage_class?.name || 'status'];
                     
                     return {
-                        level: level,
-                        name: moveData.name,
+                        name: japaneseName,
                         type: moveData.type.name,
-                        power: moveData.power || '-',
+                        typeJapanese: typeJapaneseName,
+                        power: moveData.power || 0,
                         pp: moveData.pp || '-',
-                        moveData: moveData
+                        category: category,
+                        categoryClass: categoryClass,
+                        categoryValue: categoryValue,
+                        learnMethods: latestLearnMethods
                     };
                 });
                 
-                const moves = await Promise.all(movePromises);
+                let moves = await Promise.all(movePromises);
                 
-                // レベル順にソート
-                moves.sort((a, b) => a.level - b.level);
+                // ソート: 物理技→特殊技→変化技の順、そして各カテゴリ内では威力が高い順
+                moves.sort((a, b) => {
+                    // まずカテゴリでソート（物理 → 特殊 → 変化）
+                    if (a.categoryValue !== b.categoryValue) {
+                        return b.categoryValue - a.categoryValue;
+                    }
+                    // 次に威力の高い順
+                    return b.power - a.power;
+                });
                 
                 // テーブルに追加
                 moves.forEach(move => {
+                    // すべての習得方法を表示
+                    const learnMethodsText = move.learnMethods.map(method => method.displayName).join('、');
+                    
                     const row = document.createElement('tr');
-                    
-                    // 日本語名を探す
-                    const japaneseName = move.moveData.names.find(name => name.language.name === 'ja')?.name || capitalizeFirstLetter(move.name);
-                    
                     row.innerHTML = `
-                        <td>${move.level === 0 ? '進化時' : move.level}</td>
-                        <td>${japaneseName}</td>
-                        <td><span class="type-badge ${move.type}">${capitalizeFirstLetter(move.type)}</span></td>
-                        <td>${move.power}</td>
+                        <td>${learnMethodsText}</td>
+                        <td>${move.name}</td>
+                        <td><span class="type-badge ${move.type}">${move.typeJapanese}</span></td>
+                        <td><span class="category-badge ${move.categoryClass}">${move.category}</span></td>
+                        <td>${move.power || '-'}</td>
                         <td>${move.pp}</td>
                     `;
                     
